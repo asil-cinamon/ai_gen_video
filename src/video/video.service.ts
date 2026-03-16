@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateVideoDto } from './dto/create-video.dto';
+import { JobsService } from '../jobs/jobs.service';
 
 type JobRecord = {
   id: string;
@@ -14,6 +15,8 @@ const inMemoryJobs = new Map<string, JobRecord>();
 
 @Injectable()
 export class VideoService {
+  constructor(private readonly jobsService: JobsService) {}
+
   async createJob(dto: CreateVideoDto): Promise<JobRecord> {
     const id = uuidv4();
     const record: JobRecord = {
@@ -25,7 +28,13 @@ export class VideoService {
     };
     inMemoryJobs.set(id, record);
 
-    // TODO: enqueue to BullMQ queue and persist to DB
+    // Enqueue job to BullMQ
+    try {
+      await this.jobsService.enqueueJob(id, { input: dto });
+    } catch (err) {
+      record.status = 'FAILED';
+      record.error = String(err);
+    }
 
     return record;
   }
@@ -33,7 +42,9 @@ export class VideoService {
   async getStatus(jobId: string) {
     const r = inMemoryJobs.get(jobId);
     if (!r) return { jobId, status: 'NOT_FOUND' };
-    return { jobId: r.id, status: r.status, error: r.error };
+    // complement with queue status
+    const q = await this.jobsService.getJobStatus(jobId);
+    return { jobId: r.id, status: q.status ?? r.status, error: r.error ?? q.failedReason };
   }
 
   async getResult(jobId: string) {
