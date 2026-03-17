@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { VideoService } from './video.service';
 import { CreateVideoDto } from './dto/create-video.dto';
-import { Request } from 'express';
+
 
 @Controller('api/v1/videos')
 export class VideoController {
@@ -24,7 +24,7 @@ export class VideoController {
   }
 
   @Post(':jobId/callback')
-  async callback(@Param('jobId') jobId: string, @Body() body: any, @Request() req: Request) {
+  async callback(@Param('jobId') jobId: string, @Body() body: any) {
     // body: { status: 'SUCCESS'|'FAILED', resultUrl?: string, error?: string }
     const status = body.status || 'SUCCESS';
     const resultUrl = body.resultUrl;
