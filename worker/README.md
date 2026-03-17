@@ -9,6 +9,7 @@ Env vars
 - `S3_BUCKET` (required)
 - `S3_REGION` (optional)
 - AWS credentials via environment: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+ - `API_URL` (optional) - base URL of the API to POST job callbacks, e.g. `http://api:3000`
 
 Run locally
 ```bash

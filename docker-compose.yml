@@ -27,7 +27,12 @@ services:
       - "5432:5432"
 
   worker-python:
-    image: python:3.11-slim
-    command: ["sleep", "infinity"]
+    build:
+      context: ./worker
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - S3_BUCKET=${S3_BUCKET}
+      - API_URL=http://api:3000
     depends_on:
       - redis
+      - api
