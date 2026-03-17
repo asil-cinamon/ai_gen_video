@@ -8,7 +8,7 @@ import { VideoJobEntity } from '../video/entities/video-job.entity';
       type: 'sqlite',
       database: process.env.DATABASE_URL || 'data/sqlite.db',
       entities: [VideoJobEntity],
-      synchronize: true,
+      synchronize: process.env.NODE_ENV === 'development',
       logging: false,
     }),
   ],
