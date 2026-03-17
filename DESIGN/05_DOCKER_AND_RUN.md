@@ -7,7 +7,7 @@
 - `api` (NestJS): 루트 `Dockerfile` 사용, 포트 3000 노출
 - `redis`: `redis:7-alpine`
 - `postgres`: `postgres:15-alpine` (선택적)
-- `worker-python`: `worker/Dockerfile`에서 빌드되며 `API_URL`로 콜백을 전송
+- `worker-python`: `python:3.11-slim` 이미지를 사용하며 기본 명령은 `sleep infinity` (로컬 개발용 컨테이너로, 실제 워커 코드는 컨테이너 내부에서 수동 실행)
 
 간단 실행
 ```bash
@@ -20,7 +20,7 @@ docker compose up --build
 - Worker: `python -m pip install -r worker/requirements.txt` 후 환경 변수 지정하여 실행
 
 환경변수
-- `.env.example`에 기본값 포함: `REDIS_URL`, `S3_BUCKET`, `API_URL`, `DATABASE_URL`
+- `.env.example`에 기본값 포함: `REDIS_URL`, `S3_BUCKET`, `DATABASE_URL` (워커에서 API 콜백을 사용하려면 `API_URL`을 `.env`에 추가로 정의해야 함)
 
 운영 권장
 - 프로덕션에서는 SQLite 대신 PostgreSQL 사용, Docker secrets/EnvVault로 민감 정보 관리
