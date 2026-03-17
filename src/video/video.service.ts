@@ -6,9 +6,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VideoJobEntity } from './entities/video-job.entity';
 
+type VideoJobStatus = 'PENDING' | 'FAILED' | 'SUCCESS';
+
+const VIDEO_JOB_STATUSES: VideoJobStatus[] = ['PENDING', 'FAILED', 'SUCCESS'];
+
+function isValidVideoJobStatus(status: string): status is VideoJobStatus {
+  return VIDEO_JOB_STATUSES.includes(status as VideoJobStatus);
+}
+
 type JobRecord = {
   id: string;
-  status: string;
+  status: VideoJobStatus;
   input: any;
   resultUrl?: string | null;
   error?: string | null;
@@ -70,23 +78,48 @@ export class VideoService {
   }
 
   async handleWorkerCallback(jobId: string, payload: { status: string; resultUrl?: string; error?: string }) {
+    if (!isValidVideoJobStatus(payload.status)) {
+      throw new Error(`Invalid job status received from worker: ${payload.status}`);
+    }
+    const normalizedStatus: VideoJobStatus = payload.status;
+
     const ent = await this.repo.findOne({ where: { id: jobId } });
     if (!ent) {
       // create if missing
-      const create = this.repo.create({ id: jobId, status: payload.status as any, input: null, resultUrl: payload.resultUrl ?? null, errorMessage: payload.error ?? null });
+      const create = this.repo.create({
+        id: jobId,
+        status: normalizedStatus,
+        input: null,
+        resultUrl: payload.resultUrl ?? null,
+        errorMessage: payload.error ?? null,
+      });
       await this.repo.save(create);
-      inMemoryJobs.set(jobId, { id: jobId, status: payload.status, input: null, resultUrl: payload.resultUrl ?? null, error: payload.error ?? null });
+      inMemoryJobs.set(jobId, {
+        id: jobId,
+        status: normalizedStatus,
+        input: null,
+        resultUrl: payload.resultUrl ?? null,
+        error: payload.error ?? null,
+      });
       return create;
     }
 
-    ent.status = payload.status as any;
+    ent.status = normalizedStatus;
     if (payload.resultUrl) ent.resultUrl = payload.resultUrl;
     if (payload.error) ent.errorMessage = payload.error;
-    if (payload.status === 'SUCCESS') ent.finishedAt = new Date();
+    if (normalizedStatus === 'SUCCESS') ent.finishedAt = new Date();
     await this.repo.save(ent);
 
     // update in-memory map
-    const mem = inMemoryJobs.get(jobId) ?? { id: jobId, status: ent.status, input: ent.input, resultUrl: ent.resultUrl, error: ent.errorMessage };
+    const mem =
+      inMemoryJobs.get(jobId) ??
+      {
+        id: jobId,
+        status: ent.status,
+        input: ent.input,
+        resultUrl: ent.resultUrl,
+        error: ent.errorMessage,
+      };
     mem.status = ent.status;
     mem.resultUrl = ent.resultUrl;
     mem.error = ent.errorMessage;
