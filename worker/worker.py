@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 import boto3
 import redis
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -53,6 +54,16 @@ def process_job(obj: dict):
         logger.exception('Failed to write result to Redis')
 
     logger.info('Job %s finished, uploaded to %s', jobId, url)
+
+    # Send callback to API if configured
+    api_url = os.getenv('API_URL')
+    if api_url:
+        try:
+            cb_url = api_url.rstrip('/') + f'/api/v1/videos/{jobId}/callback'
+            resp = requests.post(cb_url, json={'status': 'SUCCESS', 'resultUrl': url}, timeout=5)
+            logger.info('Posted callback to %s status=%s', cb_url, resp.status_code)
+        except Exception:
+            logger.exception('Failed to post callback to API')
 
 
 def run():

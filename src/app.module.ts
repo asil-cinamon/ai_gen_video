@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { VideoModule } from './video/video.module';
 import { JobsModule } from './jobs/jobs.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), VideoModule, JobsModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, VideoModule, JobsModule],
 })
 export class AppModule {}
