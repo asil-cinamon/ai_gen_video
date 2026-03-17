@@ -61,6 +61,9 @@ def process_job(obj: dict):
         try:
             cb_url = api_url.rstrip('/') + f'/api/v1/videos/{jobId}/callback'
             resp = requests.post(cb_url, json={'status': 'SUCCESS', 'resultUrl': url}, timeout=5)
+            if not resp.ok:
+                logger.error('Callback to %s failed with status=%s, response=%r', cb_url, resp.status_code, resp.text)
+                resp.raise_for_status()
             logger.info('Posted callback to %s status=%s', cb_url, resp.status_code)
         except Exception:
             logger.exception('Failed to post callback to API')
